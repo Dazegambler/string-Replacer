@@ -18,7 +18,7 @@ namespace StringReplacer
 
         List<data> Loaded = new List<data>();
 
-        List<String> Originals = new List<string>(),
+        List<string> Originals = new List<string>(),
             Replacements = new List<string>();
 
         void Start()
@@ -51,7 +51,7 @@ namespace StringReplacer
             {
                 foreach (var text in GetAllTexts())
                 {
-                    if (Originals.Contains(text.text)) text.text = Replacements[Originals.IndexOf(text.text)];
+                    if (Originals.Contains(text.text) && !Replacements.Contains(text.text)) text.text = Replacements[Originals.IndexOf(text.text)];
                 }
             }
         }
