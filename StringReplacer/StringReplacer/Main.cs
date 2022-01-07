@@ -1,7 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using Newtonsoft.Json;
-using StringReplacer.dev;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,60 +13,120 @@ namespace StringReplacer
     [BepInPlugin("String.Replacer", "String Replacer", "1.0.0")]
     public class Main : BaseUnityPlugin
     {
-        ConfigEntry<bool> DevMode;
+        ConfigEntry<bool>
+            Always;
 
-        List<data> Loaded = new List<data>();
+        public List<data> Loaded = new List<data>();
 
-        List<string> Originals = new List<string>(),
-            Replacements = new List<string>();
-
-        void Start()
+        public void Start()
         {
-            DevMode = Config.Bind("Dev", "Dev Mode", false);
+            Always = Config.Bind("Dev", "Always run", false);
 
-
+            Debug.LogWarning("Reading Text Databases");
             var Path = Directory.GetCurrentDirectory() + @"\TextDatabases";
-            if (File.Exists(Path))
+            if (Directory.Exists(Path))
             {
                 var Files = Directory.GetFiles(Path, "*.json");
-                LoadTextFiles(Files);
+                foreach (var file in Files)
+                {
+                    Debug.Log($"FOUND:{file}");
+                    LoadTextFiles(file);
+                }
+                Debug.LogWarning($"Finished Reading Text Databases...Found:{Files.Length}");
             }
-            else File.Create(Path);
-
-            foreach (var data in Loaded)
+            else
             {
-                Originals.Add(data.Original);
-                Replacements.Add(data.Replacement);
+                Debug.LogWarning("TextDatabases File not found creating file");
+                Directory.CreateDirectory(Path);
             }
         }
 
         void Update()
         {
-            if (DevMode.Value == true)
+            if (Input.GetKeyDown(KeyCode.N))
             {
-                if (Input.GetKeyDown(KeyCode.N)) DevTools.GetText(GetAllTexts());
+                GetText(GetAllTexts());
             }
-            else
+            if (Always.Value == true)
             {
-                foreach (var text in GetAllTexts())
+                foreach (var text in FindObjectsOfType<Text>())
                 {
-                    if (Originals.Contains(text.text) && !Replacements.Contains(text.text)) text.text = Replacements[Originals.IndexOf(text.text)];
+                    if (ReplaceString(text) == false)
+                    {
+                        ReplaceChar(text);
+                    }
+                    else
+                    {
+                        Debug.Log("Text Replaced");
+                    }
                 }
             }
         }
 
-        void LoadTextFiles(string[] Files)
+        bool ReplaceString(Text target)
         {
-            foreach (var file in Files)
+            foreach(var data in Loaded)
             {
-                StreamReader reader = new StreamReader(file);
+                if (data.Original == target.text && data.Original != data.Replacement)
+                {
+                    target.text = data.Replacement;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool ReplaceChar(Text target)
+        {
+            foreach(var data in Loaded)
+            {
+                if (target.text.Contains(data.Original) && data.Original != data.Replacement)
+                {
+                    target.text.Replace(data.Original, data.Replacement);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void LoadTextFiles(string file)
+        {
+            using (StreamReader reader = new StreamReader(file))
+            {
                 string json = reader.ReadToEnd();
-                var _data = JsonConvert.DeserializeObject<data>(json);
-                Loaded.Add(_data);
+                var _data = JsonConvert.DeserializeObject<List<data>>(json);
+                foreach (var data in _data)
+                {
+                    Loaded.Add(data);
+                }
             }
         }
 
         Text[] GetAllTexts() => SceneManager.GetActiveScene().GetRootGameObjects().GetAllComponentsInArray<Text>();
+
+        public void GetText(Text[] Texts)
+        {
+            var _data = new List<data>();
+            foreach (var text in Texts) NewData(text, _data);
+            using (var file = File.CreateText($@"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\{SceneManager.GetActiveScene().name}.json"))
+            {
+                string json = JsonConvert.SerializeObject(_data.ToArray(), Formatting.Indented);
+                file.Write(json);
+            }
+            Debug.Log("All Strings have been Logged");
+        }
+
+        private static string format_json(string json)
+        {
+            dynamic parsedJson = JsonConvert.DeserializeObject(json);
+            return JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
+        }
+
+        void NewData(Text textobj, List<data> _data) => _data.Add(new data()
+        {
+            Original = textobj.text,
+            Replacement = textobj.text,
+        });
     }
     public static class Extensions
     {
