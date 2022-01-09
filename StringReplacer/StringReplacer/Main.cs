@@ -89,6 +89,19 @@ namespace StringReplacer
             return false;
         }
 
+        bool Exists(string text,List<data> Loaded)
+        {
+            foreach(var loads in Loaded)
+            {
+                if (loads.Original == text)
+                {
+                    Debug.LogWarning($"Found Duplicate:{text}");
+                    return true;
+                }
+            }
+            return false;
+        }
+
         void LoadTextFiles(string file)
         {
             using (StreamReader reader = new StreamReader(file))
@@ -107,7 +120,13 @@ namespace StringReplacer
         public void GetText(Text[] Texts)
         {
             var _data = new List<data>();
-            foreach (var text in Texts) NewData(text, _data);
+            foreach (var text in Texts)
+            {
+                if(Exists(text.text,_data)== false)
+                {
+                    NewData(text, _data);
+                }
+            }
             using (var file = File.CreateText($@"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\{SceneManager.GetActiveScene().name}.json"))
             {
                 string json = JsonConvert.SerializeObject(_data.ToArray(), Formatting.Indented);
