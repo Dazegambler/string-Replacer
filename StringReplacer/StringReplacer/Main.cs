@@ -95,7 +95,6 @@ namespace StringReplacer
             {
                 if (loads.Original == text)
                 {
-                    Debug.LogWarning($"Found Duplicate:{text}");
                     return true;
                 }
             }
