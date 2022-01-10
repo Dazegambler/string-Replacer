@@ -13,15 +13,10 @@ namespace StringReplacer
     [BepInPlugin("String.Replacer", "String Replacer", "1.0.0")]
     public class Main : BaseUnityPlugin
     {
-        ConfigEntry<bool>
-            Always;
-
         public List<data> Loaded = new List<data>();
 
         public void Start()
         {
-            Always = Config.Bind("Dev", "Always run", false);
-
             Debug.LogWarning("Reading Text Databases");
             var Path = Directory.GetCurrentDirectory() + @"\TextDatabases";
             if (Directory.Exists(Path))
@@ -47,18 +42,15 @@ namespace StringReplacer
             {
                 GetText(GetAllTexts());
             }
-            if (Always.Value == true)
+            foreach (var text in FindObjectsOfType<Text>())
             {
-                foreach (var text in FindObjectsOfType<Text>())
+                if (ReplaceString(text) == false)
                 {
-                    if (ReplaceString(text) == false)
-                    {
-                        ReplaceChar(text);
-                    }
-                    else
-                    {
-                        Debug.Log("Text Replaced");
-                    }
+                    ReplaceChar(text);
+                }
+                else
+                {
+                    Debug.Log("Text Replaced");
                 }
             }
         }
