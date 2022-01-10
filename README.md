@@ -1,4 +1,4 @@
-# string Replace
+# string Replacer
  json file based string replacement  Unity plugin
  
  ### USAGE
