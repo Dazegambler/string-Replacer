@@ -13,7 +13,7 @@ namespace StringReplacer
     [BepInPlugin("String.Replacer", "String Replacer", "1.0.0")]
     public class Main : BaseUnityPlugin
     {
-        public List<data> Loaded = new List<data>();
+        public Dictionary<string, string> Loaded = new Dictionary<string, string>();
 
         public void Start()
         {
@@ -44,41 +44,23 @@ namespace StringReplacer
             }
             foreach (var text in FindObjectsOfType<Text>())
             {
-                if (ReplaceString(text) == false)
-                {
-                    ReplaceChar(text);
-                }
-                else
-                {
-                    Debug.Log("Text Replaced");
-                }
+                ReplaceString(text);
             }
         }
 
         bool ReplaceString(Text target)
         {
-            foreach(var data in Loaded)
+            if (Loaded.ContainsKey(target.text))
             {
-                if (data.Original == target.text && data.Original != data.Replacement)
-                {
-                    target.text = data.Replacement;
-                    return true;
-                }
+                //Debug.Log(("Replaced \"", target.text, "\" with \"", (string)Loaded[target.text], '\"'));
+                target.text = Loaded[target.text];
+                return true;
             }
-            return false;
-        }
-
-        bool ReplaceChar(Text target)
-        {
-            foreach(var data in Loaded)
+            else
             {
-                if (target.text.Contains(data.Original) && data.Original != data.Replacement)
-                {
-                    target.text.Replace(data.Original, data.Replacement);
-                    return true;
-                }
+                //Debug.Log(("Failed to replace \"", target.text, '\"'));
+                return false;
             }
-            return false;
         }
 
         bool Exists(string text,List<data> Loaded)
@@ -101,7 +83,14 @@ namespace StringReplacer
                 var _data = JsonConvert.DeserializeObject<List<data>>(json);
                 foreach (var data in _data)
                 {
-                    Loaded.Add(data);
+                    if (data.Original != data.Replacement)
+                        if (!Loaded.ContainsKey(data.Original))
+                            Loaded.Add(data.Original, data.Replacement);
+                        else
+                            Debug.Log(("Error: string \"", data.Original, "\" appears more than one time"));
+                    else
+                        Debug.Log(("String \"", data.Original, "\" got no replacements"));
+
                 }
             }
         }
