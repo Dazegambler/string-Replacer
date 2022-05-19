@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -95,9 +96,9 @@ namespace StringReplacer
             }
         }
 
-        Text[] GetAllTexts() => SceneManager.GetActiveScene().GetRootGameObjects().GetAllComponentsInArray<Text>();
+        List<Text> GetAllTexts() => SceneManager.GetActiveScene().GetRootGameObjects().GetAllComponentsInArray<Text>();
 
-        public void GetText(Text[] Texts)
+        public void GetText(List<Text> Texts)
         {
             var _data = new List<data>();
             foreach (var text in Texts)
@@ -129,46 +130,29 @@ namespace StringReplacer
     }
     public static class Extensions
     {
-        public static T[] GetAllComponentsInArray<T>(this GameObject[] source)
+        public static List<T> GetAllComponentsInArray<T>(this GameObject[] source)
         {
             List<T> a = new List<T>();
 
-            foreach (var obj in source)
+            source.ToList().ForEach(gobject =>
             {
-                if (obj.TryGetComponent<T>(out var t)) a.Add(obj.GetComponent<T>());
-                foreach (var _obj in obj.ListChildren())
+                if (gobject.TryGetComponent<T>(out var s))
                 {
-                    if (_obj.GetComponent<T>() != null)
-                    {
-                        a.Add(_obj.GetComponent<T>());
-                    }
+                    a.Add(gobject.GetComponent<T>());
                 }
-
-            }
-            if (a.ToArray() != null)
-            {
-                return a.ToArray();
-            }
-            else
-            {
-                Debug.LogWarning($"DazeExtensions.GetComponentsInArray:Error Returning Array");
-                return new T[0];
-            }
+                a.AddRange(gobject.ListChildren().ToArray().GetAllComponentsInArray<T>());
+            });
+            return a;
         }
 
-        public static Transform[] ListChildren(this GameObject parent)
+        public static List<GameObject> ListChildren(this GameObject parent)
         {
-            Transform[] a;
-            a = parent.GetComponentsInChildren<Transform>(true);
-            try
+            List<GameObject> a = new List<GameObject>();
+            for(int i = 0; i < parent.transform.childCount; i++)
             {
-                return a;
+                a.Add(parent.transform.GetChild(i).gameObject);
             }
-            catch
-            {
-                Debug.LogWarning($"DazeExtensions.ListChildren:COULD NOT LIST CHILDREN INSIDE {parent.name}");
-                return new Transform[0];
-            }
+            return a;
         }
     }
 }
